@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecEngine — Tag-Aware Recommendations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0c0c0c;
+      --bg-secondary: #141414;
+      --bg-card: rgba(255,255,255,0.03);
+      --bg-card-hover: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.08);
+      --border-accent: rgba(234,179,8,0.25);
+      --text-primary: #f5f5f5;
+      --text-secondary: #a0a0a0;
+      --text-muted: #666;
+      --accent: #eab308;
+      --accent-soft: rgba(234,179,8,0.12);
+      --accent-glow: rgba(234,179,8,0.25);
+      --accent-text: #fbbf24;
+      --white: #fff;
+      --grey-100: #f5f5f5;
+      --grey-200: #e5e5e5;
+      --grey-300: #d4d4d4;
+      --grey-400: #a3a3a3;
+      --grey-500: #737373;
+      --grey-600: #525252;
+      --grey-700: #404040;
+      --grey-800: #262626;
+      --grey-900: #171717;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-primary); color: var(--text-primary);
+      min-height: 100vh; overflow-x: hidden;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+    /* Header */
+    header { text-align: center; padding: 2.5rem 0 2rem; }
+    header .logo {
+      font-size: .8rem; font-weight: 600; letter-spacing: 3px; text-transform: uppercase;
+      color: var(--accent); margin-bottom: .4rem;
+    }
+    header h1 {
+      font-size: 2rem; font-weight: 700; line-height: 1.2; color: var(--white);
+    }
+    header p { color: var(--grey-500); margin-top: .4rem; font-size: .88rem; }
+
+    /* Search card */
+    .search-card {
+      background: var(--grey-900); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.4rem 1.5rem;
+      display: flex; gap: .85rem; align-items: end;
+      max-width: 600px; margin: 0 auto 1.75rem;
+    }
+    .search-card .field { flex: 1; }
+    .search-card label {
+      display: block; font-size: .68rem; font-weight: 500;
+      color: var(--grey-500); text-transform: uppercase;
+      letter-spacing: .8px; margin-bottom: .35rem;
+    }
+    .search-card input {
+      width: 100%; padding: .6rem .8rem; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--bg-primary);
+      color: var(--text-primary); font-size: .92rem; font-family: inherit;
+      transition: border-color .2s;
+    }
+    .search-card input:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .search-card button {
+      padding: .62rem 1.5rem; border: none; border-radius: var(--radius-sm);
+      background: var(--accent); color: #000; font-weight: 600; font-size: .88rem;
+      cursor: pointer; white-space: nowrap; font-family: inherit;
+      transition: background .15s, transform .1s;
+    }
+    .search-card button:hover { background: #facc15; transform: translateY(-1px); }
+    .search-card button:active { transform: scale(.97); }
+
+    /* Profile card */
+    .profile-card {
+      display: none;
+      background: var(--grey-900); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.5rem 1.6rem; margin-bottom: 1.75rem;
+      animation: fadeUp .35s ease both;
+    }
+    .profile-card.visible { display: block; }
+    .profile-header {
+      display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+      margin-bottom: 1.15rem; padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .cid-label { font-size: 1rem; font-weight: 700; color: var(--white); }
+    .segment-badge {
+      padding: .3rem .8rem; border-radius: 100px; font-size: .72rem; font-weight: 600;
+      background: var(--accent-soft); color: var(--accent-text);
+      border: 1px solid var(--border-accent);
+    }
+    .tags-row-profile { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .tag-pill {
+      padding: .22rem .6rem; border-radius: 100px; font-size: .66rem; font-weight: 500;
+      color: var(--grey-400); background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .tag-pill.highlight {
+      color: var(--accent-text); background: var(--accent-soft);
+      border-color: var(--border-accent);
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: .6rem; margin-bottom: 1.15rem;
+    }
+    .stat-box {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: .6rem .75rem; text-align: center;
+    }
+    .stat-box .stat-value {
+      font-size: 1.15rem; font-weight: 700; color: var(--accent-text);
+    }
+    .stat-box .stat-label {
+      font-size: .6rem; font-weight: 500; color: var(--grey-600);
+      text-transform: uppercase; letter-spacing: .5px; margin-top: .15rem;
+    }
+
+    /* History grid */
+    .history-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+    }
+    @media (max-width: 700px) { .history-grid { grid-template-columns: 1fr; } }
+    .history-col h4 {
+      font-size: .7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--grey-600); margin-bottom: .45rem;
+    }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .3rem 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: .76rem;
+    }
+    .history-item .hi-name { color: var(--grey-300); }
+    .history-item .hi-count {
+      color: var(--accent-text); font-weight: 600; font-size: .68rem;
+      background: var(--accent-soft); padding: .12rem .45rem; border-radius: 100px;
+    }
+    .recent-order {
+      padding: .3rem 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: .72rem; color: var(--grey-400);
+    }
+    .recent-order .ro-date { color: var(--grey-600); font-size: .66rem; }
+    .recent-order .ro-cat { color: var(--accent-text); }
+
+    /* Section title */
+    .section-title {
+      font-size: 1rem; font-weight: 600; margin-bottom: 1rem;
+      display: none; color: var(--grey-300);
+    }
+    .section-title.visible { display: block; }
+
+    /* Products grid */
+    .products-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .85rem;
+    }
+    .product-card {
+      background: var(--grey-900); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.15rem 1.1rem;
+      transition: border-color .2s, transform .2s;
+      position: relative;
+    }
+    .product-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-2px);
+    }
+    .product-card .rank {
+      position: absolute; top: .7rem; right: .75rem;
+      font-size: .62rem; font-weight: 700; color: var(--accent-text);
+      background: var(--accent-soft); padding: .18rem .45rem; border-radius: 5px;
+    }
+    .product-card .name {
+      font-weight: 600; font-size: .88rem; margin-bottom: .25rem;
+      padding-right: 2.2rem; line-height: 1.3; color: var(--white);
+    }
+    .product-card .meta { font-size: .72rem; color: var(--grey-500); margin-bottom: .35rem; }
+    .product-card .price {
+      font-size: 1.05rem; font-weight: 700; color: var(--accent-text);
+      margin-bottom: .35rem;
+    }
+    .product-card .ptags-row { display: flex; gap: .25rem; flex-wrap: wrap; }
+    .product-card .ptag {
+      font-size: .58rem; padding: .12rem .4rem; border-radius: 100px;
+      background: rgba(255,255,255,0.04); color: var(--grey-500);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .product-card .explanation {
+      margin-top: .5rem; font-size: .68rem; color: var(--grey-400);
+      line-height: 1.4; font-style: italic;
+      background: rgba(234,179,8,0.04); border-radius: 6px;
+      padding: .4rem .55rem; border-left: 2px solid rgba(234,179,8,0.2);
+    }
+    .product-card .score-bar {
+      margin-top: .45rem; height: 2px; border-radius: 2px;
+      background: rgba(255,255,255,0.04); overflow: hidden;
+    }
+    .product-card .score-bar .fill {
+      height: 100%; border-radius: 2px; background: var(--accent);
+      transition: width .5s ease;
+    }
+
+    /* Loader & Error */
+    .loader { display: none; text-align: center; padding: 3rem 0; color: var(--grey-500); }
+    .loader.visible { display: block; }
+    .loader .spinner {
+      width: 32px; height: 32px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 0 auto .65rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { display: none; text-align: center; padding: 2rem; color: #dc2626; font-size: .85rem; }
+    .error-msg.visible { display: block; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    @media (max-width: 640px) {
+      .search-card { flex-direction: column; align-items: stretch; }
+      header h1 { font-size: 1.5rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">RecEngine</div>
+    <h1>Tag-Aware Recommendations</h1>
+    <p>Personalized product discovery powered by RFM segments and real-time behavioral tags</p>
+  </header>
+
+  <div class="search-card">
+    <div class="field">
+      <label for="customerId">Customer ID</label>
+      <input type="number" id="customerId" placeholder="e.g. 1" min="1" value="1">
+    </div>
+    <div class="field" style="max-width:110px">
+      <label for="topK">Results</label>
+      <input type="number" id="topK" placeholder="20" min="1" max="100" value="20">
+    </div>
+    <button id="goBtn" onclick="fetchRecommendations()">Recommend</button>
+  </div>
+
+  <div class="profile-card" id="profileCard"></div>
+  <h2 class="section-title" id="sectionTitle">Recommended for you</h2>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <span>Generating recommendations</span>
+  </div>
+  <div class="error-msg" id="errorMsg"></div>
+  <div class="products-grid" id="productsGrid"></div>
+</div>
+
+<script>
+async function fetchRecommendations() {
+  const cid = document.getElementById('customerId').value || 1;
+  const topK = document.getElementById('topK').value || 20;
+  const grid = document.getElementById('productsGrid');
+  const loader = document.getElementById('loader');
+  const errorMsg = document.getElementById('errorMsg');
+  const profileCard = document.getElementById('profileCard');
+  const title = document.getElementById('sectionTitle');
+
+  grid.innerHTML = '';
+  errorMsg.className = 'error-msg';
+  profileCard.className = 'profile-card';
+  title.className = 'section-title';
+  loader.className = 'loader visible';
+
+  try {
+    const res = await fetch(`/recommend/${cid}?top_k=${topK}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    loader.className = 'loader';
+
+    const p = data.profile || {};
+    const seg = data.rfm_segment || 'New User';
+    const tags = data.behavioral_tags || [];
+
+    let tagsHtml = tags.map(t => `<span class="tag-pill highlight">${t}</span>`).join('');
+    if (tags.length === 0) tagsHtml = '<span class="tag-pill">No tags yet</span>';
+
+    const topCats = (p.top_categories || []).map(c =>
+      `<div class="history-item"><span class="hi-name">${c.name}</span><span class="hi-count">${c.count} items</span></div>`
+    ).join('') || '<div class="history-item"><span class="hi-name" style="color:var(--grey-600)">No purchase history</span></div>';
+
+    const topBrands = (p.top_brands || []).map(b =>
+      `<div class="history-item"><span class="hi-name">${b.name}</span><span class="hi-count">${b.count} items</span></div>`
+    ).join('') || '<div class="history-item"><span class="hi-name" style="color:var(--grey-600)">No data</span></div>';
+
+    const recentOrders = (p.recent_orders || []).map(o =>
+      `<div class="recent-order"><span class="ro-date">${o.date}</span> — <span class="ro-cat">${o.category}</span> / ${o.brand}</div>`
+    ).join('') || '<div class="recent-order" style="color:var(--grey-600)">No recent orders</div>';
+
+    const browsedCats = (p.browsed_categories || []).slice(0, 5);
+    const browsedHtml = browsedCats.map(c =>
+      `<div class="history-item"><span class="hi-name">${c.name}</span><span class="hi-count">${c.views} views</span></div>`
+    ).join('');
+
+    profileCard.innerHTML = `
+      <div class="profile-header">
+        <span class="cid-label">Customer #${data.customer_id}</span>
+        <span class="segment-badge">${seg}</span>
+        <div class="tags-row-profile">${tagsHtml}</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value">${p.total_orders || 0}</div>
+          <div class="stat-label">Orders</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${p.total_items || 0}</div>
+          <div class="stat-label">Items Bought</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">$${(p.total_spend || 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+          <div class="stat-label">Total Spend</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">$${(p.avg_order_value || 0).toFixed(0)}</div>
+          <div class="stat-label">Avg Order</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">$${(p.avg_item_price || 0).toFixed(0)}</div>
+          <div class="stat-label">Avg Price</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">${p.total_product_views || 0}</div>
+          <div class="stat-label">Product Views</div>
+        </div>
+      </div>
+
+      <div class="history-grid">
+        <div class="history-col">
+          <h4>Top Categories Purchased</h4>
+          ${topCats}
+        </div>
+        <div class="history-col">
+          <h4>Top Brands Purchased</h4>
+          ${topBrands}
+        </div>
+        <div class="history-col">
+          <h4>Recent Orders</h4>
+          ${recentOrders}
+          ${browsedHtml ? '<h4 style="margin-top:.7rem">Most Browsed Categories</h4>' + browsedHtml : ''}
+        </div>
+      </div>
+    `;
+    profileCard.className = 'profile-card visible';
+    title.className = 'section-title visible';
+
+    const maxScore = Math.max(...data.recommendations.map(r => r.score), 0.01);
+    data.recommendations.forEach((rec, i) => {
+      const pct = Math.round((rec.score / maxScore) * 100);
+      const tagsHTML = (rec.tags || '').split('|').filter(Boolean)
+        .map(t => `<span class="ptag">${t.trim()}</span>`).join('');
+      const explanation = rec.explanation || '';
+      grid.innerHTML += `
+        <div class="product-card" style="animation: fadeUp .35s ${i * .03}s both">
+          <span class="rank">#${i + 1}</span>
+          <div class="name">${rec.name}</div>
+          <div class="meta">${rec.category} / ${rec.brand}</div>
+          <div class="price">$${rec.price.toFixed(2)}</div>
+          <div class="ptags-row">${tagsHTML}</div>
+          ${explanation ? `<div class="explanation">${explanation}</div>` : ''}
+          <div class="score-bar"><div class="fill" style="width:${pct}%"></div></div>
+        </div>`;
+    });
+  } catch (err) {
+    loader.className = 'loader';
+    errorMsg.textContent = `Error: ${err.message}. Make sure the server is running and models are trained.`;
+    errorMsg.className = 'error-msg visible';
+  }
+}
+
+document.getElementById('customerId').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchRecommendations();
+});
+</script>
+</body>
+</html>

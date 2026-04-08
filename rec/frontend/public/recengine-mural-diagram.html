@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RecEngine E2E Process Flow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      background: #e8edf4;
+      color: #1e2d45;
+      min-width: 1200px;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      background: #2b3a5c;
+      color: #fff;
+      padding: 8px 28px;
+      font-size: 11px;
+      letter-spacing: .12em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* ── Page title ── */
+    .page-title {
+      padding: 22px 28px 14px;
+      font-size: 34px;
+      font-weight: 800;
+      color: #1e2d45;
+      line-height: 1.15;
+    }
+
+    /* ── Main canvas ── */
+    .canvas {
+      padding: 0 18px 36px;
+      overflow-x: auto;
+    }
+
+    /* ── Outer wrapper: sidebar + phases ── */
+    .diagram {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      min-width: 1140px;
+    }
+
+    /* ── Left sidebar (row labels) ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      flex: 0 0 38px;
+      margin-right: 6px;
+    }
+
+    .sidebar-spacer {
+      flex: 0 0 30px; /* room for team-name row */
+    }
+
+    .row-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #4a5e80;
+      border-radius: 6px;
+      background: #dce4f0;
+      border: 1.5px solid #b8c6dc;
+      padding: 8px 4px;
+    }
+
+    .row-label.human-label  { flex: 0 0 110px; margin-bottom: 6px; }
+    .row-label.agent-label  { flex: 1; }
+
+    /* ── Phases wrapper ── */
+    .phases {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+    }
+
+    /* ── Single phase block ── */
+    .phase {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 2px solid #b5c2d8;
+      border-radius: 12px;
+      background: #f0f4fa;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .phase-header {
+      background: #d6dfee;
+      border-bottom: 1.5px solid #b5c2d8;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: #2b3a5c;
+    }
+
+    .phase-sub {
+      font-weight: 400;
+      font-size: 11px;
+      color: #5a6e92;
+    }
+
+    .phase-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    /* ── Team-column row ── */
+    .team-row {
+      display: flex;
+      border-bottom: 1px solid #cdd6e8;
+    }
+
+    .team-cell {
+      flex: 1;
+      min-width: 0;
+      padding: 5px 6px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #4a5e80;
+      letter-spacing: .03em;
+      text-align: center;
+      border-right: 1px dashed #cdd6e8;
+      background: #e6ecf7;
+    }
+    .team-cell:last-child { border-right: none; }
+
+    /* ── Human step row ── */
+    .human-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 8px 6px;
+      gap: 0;
+      border-bottom: 1px solid #cdd6e8;
+      min-height: 110px;
+    }
+
+    .step-cell {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 4px;
+      position: relative;
+    }
+
+    /* horizontal connector between steps */
+    .step-cell + .step-cell::before {
+      content: "→";
+      position: absolute;
+      left: -10px;
+      top: 20px;
+      font-size: 14px;
+      color: #8a7030;
+      font-weight: 700;
+    }
+
+    .step-box {
+      width: 100%;
+      background: #ffe080;
+      border: 1.5px solid #d4a020;
+      border-radius: 7px;
+      padding: 7px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.3;
+      color: #3a2800;
+    }
+
+    .step-desc {
+      margin-top: 5px;
+      font-size: 9.5px;
+      color: #4a5e80;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    /* ── Agent-triggered badge ── */
+    .trigger-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-bottom: 1px solid #cdd6e8;
+    }
+
+    .trigger-badge {
+      background: #3a7fc1;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-radius: 20px;
+      padding: 4px 14px;
+    }
+
+    /* dotted connector from badge to agent card */
+    .trigger-connector {
+      border-top: 2px dotted #5d6b88;
+      flex: 1;
+    }
+    .trigger-connector.left  { margin-right: 8px; }
+    .trigger-connector.right { margin-left: 8px; }
+
+    /* ── Agent cards row ── */
+    .agents-row {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      flex: 1;
+      padding: 8px 6px;
+    }
+
+    .agent-wrap {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .dotted-drop {
+      width: 0;
+      height: 18px;
+      border-left: 2px dotted #5d6b88;
+    }
+
+    .agent-card {
+      width: 100%;
+      border: 1.5px dashed #7a8fba;
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+      font-size: 10.5px;
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .agent-name {
+      background: #e8dfff;
+      border-bottom: 1.5px solid #b09de0;
+      padding: 7px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #2c1a5e;
+      line-height: 1.25;
+    }
+
+    .agent-body {
+      padding: 8px;
+    }
+
+    .alabel {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #5a6e92;
+      margin-bottom: 3px;
+    }
+
+    .agent-body ul {
+      padding-left: 13px;
+      margin-bottom: 7px;
+    }
+
+    .agent-body li {
+      margin-bottom: 2px;
+      color: #1e2d45;
+    }
+
+    /* ── Phase with no agent (spacer) ── */
+    .no-agent {
+      flex: 1;
+      min-height: 160px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">RecEngine E2E Process Flow</div>
+<div class="page-title">Use Case 1 – RecEngine<br><span style="font-size:16px;font-weight:500;color:#5a6e92;">AI-Driven Customer Intelligence &amp; Recommendation Platform</span></div>
+
+<div class="canvas">
+  <div class="diagram">
+
+    <!-- ── Sidebar ── -->
+    <div class="sidebar">
+      <div class="sidebar-spacer"></div>
+      <!-- team row height: 30px -->
+      <div style="flex:0 0 30px;"></div>
+      <!-- human row -->
+      <div class="row-label human-label">Human</div>
+      <!-- trigger row height: ~36px -->
+      <div style="flex:0 0 36px;"></div>
+      <!-- agents row -->
+      <div class="row-label agent-label">Agents</div>
+    </div>
+
+    <!-- ── Phases ── -->
+    <div class="phases">
+
+      <!-- ══ PHASE 1: Data & Setup ══ -->
+      <div class="phase">
+        <div class="phase-header">
+          Data &amp; Setup
+          <span class="phase-sub">(pre-analysis)</span>
+        </div>
+        <div class="phase-body">
+
+          <!-- Team names -->
+          <div class="team-row">
+            <div class="team-cell">Data Team</div>
+            <div class="team-cell">Product Team</div>
+          </div>
+
+          <!-- Human steps -->
+          <div class="human-row">
+            <div class="step-cell">
+              <div class="step-box">Connect Data Sources</div>
+              <div class="step-desc">Upload transactions, browsing events &amp; catalog feeds</div>
+            </div>
+            <div class="step-cell">
+              <div class="step-box">Configure Catalog &amp; Tags</div>
+              <div class="step-desc">Define product taxonomy, tags &amp; pricing rules</div>
+            </div>
+          </div>
+
+          <!-- Agent triggered -->
+          <div class="trigger-row">
+            <div class="trigger-connector left"></div>
+            <div class="trigger-badge">Agent Triggered</div>
+            <div class="trigger-connector right"></div>
+          </div>
+
+          <!-- Agent cards -->
+          <div class="agents-row">
+            <div class="agent-wrap">
+              <div class="dotted-drop"></div>
+              <div class="agent-card">
+                <div class="agent-name">Analytics &amp; Insight Agent</div>
+                <div class="agent-body">
+                  <div class="alabel">Agent Actions</div>
+                  <ul>
+                    <li>Ingest &amp; validate raw data</li>
+                    <li>Compute RFM scores per customer</li>
+                    <li>Detect data anomalies &amp; gaps</li>
+                    <li>Generate baseline KPI report</li>
+                  </ul>
+                  <div class="alabel">Output</div>
+                  <ul>
+                    <li>Validated dataset &amp; KPI baseline</li>
+                    <li>RFM segment distribution</li>
+                    <li>Data quality alerts</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="agent-wrap">
+              <div class="no-agent"></div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /phase 1 -->
+
+      <!-- ══ PHASE 2: Analyze & Personalize ══ -->
+      <div class="phase">
+        <div class="phase-header">
+          Analyze &amp; Personalize
+          <span class="phase-sub">(in-session)</span>
+        </div>
+        <div class="phase-body">
+
+          <!-- Team names -->
+          <div class="team-row">
+            <div class="team-cell">Analytics Team</div>
+            <div class="team-cell">Data Science Team</div>
+            <div class="team-cell">Product Team</div>
+          </div>
+
+          <!-- Human steps -->
+          <div class="human-row">
+            <div class="step-cell">
+              <div class="step-box">Review RFM Segments</div>
+              <div class="step-desc">Validate Champions, At-Risk, Lost groupings</div>
+            </div>
+            <div class="step-cell">
+              <div class="step-box">Select Customer Profile</div>
+              <div class="step-desc">Open individual behavioral timeline &amp; tags</div>
+            </div>
+            <div class="step-cell">
+              <div class="step-box">Request Recommendations</div>
+              <div class="step-desc">Trigger model to surface top products</div>
+            </div>
+          </div>
+
+          <!-- Agent triggered -->
+          <div class="trigger-row">
+            <div class="trigger-connector left"></div>
+            <div class="trigger-badge">Agent Triggered</div>
+            <div class="trigger-connector right"></div>
+          </div>
+
+          <!-- Agent cards -->
+          <div class="agents-row">
+            <div class="agent-wrap">
+              <div class="dotted-drop"></div>
+              <div class="agent-card">
+                <div class="agent-name">Customer Intelligence Agent</div>
+                <div class="agent-body">
+                  <div class="alabel">Agent Actions</div>
+                  <ul>
+                    <li>Build RFM + behavior-tag profile</li>
+                    <li>Compare browse vs. purchase patterns</li>
+                    <li>Detect intent gaps &amp; friction</li>
+                    <li>Compute AOV &amp; frequency scores</li>
+                  </ul>
+                  <div class="alabel">Output</div>
+                  <ul>
+                    <li>Full customer profile</li>
+                    <li>Tags: Explorer, Bargain Hunter…</li>
+                    <li>Opportunity signals</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="agent-wrap">
+              <div class="dotted-drop"></div>
+              <div class="agent-card">
+                <div class="agent-name">Recommendation Engine Agent</div>
+                <div class="agent-body">
+                  <div class="alabel">Agent Actions</div>
+                  <ul>
+                    <li>Match behavior with product tags</li>
+                    <li>Apply collaborative + behavioral filtering</li>
+                    <li>Score &amp; rank product candidates</li>
+                    <li>Generate recommendation reasons</li>
+                  </ul>
+                  <div class="alabel">Output</div>
+                  <ul>
+                    <li>Personalized product shortlist</li>
+                    <li>Reason per recommendation</li>
+                    <li>Cross-category expansion ideas</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="agent-wrap">
+              <div class="dotted-drop"></div>
+              <div class="agent-card">
+                <div class="agent-name">Catalog Intelligence Agent</div>
+                <div class="agent-body">
+                  <div class="alabel">Agent Actions</div>
+                  <ul>
+                    <li>Map product tags to conversion</li>
+                    <li>Find high-performing tag combos</li>
+                    <li>Flag underperforming SKUs</li>
+                  </ul>
+                  <div class="alabel">Output</div>
+                  <ul>
+                    <li>Tag effectiveness report</li>
+                    <li>Catalog optimization insights</li>
+                    <li>Pricing/positioning hints</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /phase 2 -->
+
+      <!-- ══ PHASE 3: Engage & Retain ══ -->
+      <div class="phase">
+        <div class="phase-header">
+          Engage &amp; Retain
+          <span class="phase-sub">(post-analysis actions)</span>
+        </div>
+        <div class="phase-body">
+
+          <!-- Team names -->
+          <div class="team-row">
+            <div class="team-cell">Marketing Team</div>
+            <div class="team-cell">Customer Success</div>
+            <div class="team-cell">Finance Team</div>
+          </div>
+
+          <!-- Human steps -->
+          <div class="human-row">
+            <div class="step-cell">
+              <div class="step-box">Filter Target Segments</div>
+              <div class="step-desc">Select At-Risk / High-Value cohorts for action</div>
+            </div>
+            <div class="step-cell">
+              <div class="step-box">Launch Campaign</div>
+              <div class="step-desc">Approve &amp; send personalised offers</div>
+            </div>
+            <div class="step-cell">
+              <div class="step-box">Monitor &amp; Adjust</div>
+              <div class="step-desc">Review conversion lift &amp; iterate strategy</div>
+            </div>
+          </div>
+
+          <!-- Agent triggered -->
+          <div class="trigger-row">
+            <div class="trigger-connector left"></div>
+            <div class="trigger-badge">Agent Triggered</div>
+            <div class="trigger-connector right"></div>
+          </div>
+
+          <!-- Agent cards -->
+          <div class="agents-row">
+            <div class="agent-wrap">
+              <div class="dotted-drop"></div>
+              <div class="agent-card">
+                <div class="agent-name">Retention &amp; Campaign Agent</div>
+                <div class="agent-body">
+                  <div class="alabel">Agent Actions</div>
+                  <ul>
+                    <li>Detect churn &amp; drop-off signals</li>
+                    <li>Prioritise high-value at-risk customers</li>
+                    <li>Generate campaign &amp; offer strategy</li>
+                    <li>Personalise retention interventions</li>
+                  </ul>
+                  <div class="alabel">Output</div>
+                  <ul>
+                    <li>Targeted campaign list</li>
+                    <li>Offer &amp; channel recommendations</li>
+                    <li>Retention strategy by segment</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="agent-wrap">
+              <div class="no-agent"></div>
+            </div>
+            <div class="agent-wrap">
+              <div class="no-agent"></div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /phase 3 -->
+
+    </div><!-- /phases -->
+  </div><!-- /diagram -->
+</div><!-- /canvas -->
+
+</body>
+</html>
