@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case 5 - Reduce Churn Risk</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f0f0; padding: 20px; }
+        .mural-header { background: #2D2D2D; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
+        .mural-title { font-size: 14px; font-weight: 500; }
+        .canvas-container { background: #FAFAFA; border: 1px solid #ddd; border-radius: 0 0 8px 8px; padding: 40px; overflow-x: auto; }
+        .use-case-title { font-size: 28px; font-weight: 600; color: #333; margin-bottom: 30px; }
+        .workflow-wrapper { min-width: 1400px; position: relative; }
+        .phase-row { display: flex; margin-left: 100px; }
+        .phase-section { flex: 1; text-align: center; padding: 12px 20px; background: #E8E8E8; border: 1px solid #CCC; font-size: 12px; font-weight: 600; color: #333; }
+        .phase-section:first-child { border-radius: 8px 0 0 0; }
+        .phase-section:last-child { border-radius: 0 8px 0 0; }
+        .workflow-area { display: flex; border: 2px solid #333; border-radius: 0 0 8px 8px; }
+        .lane-labels { width: 100px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #333; }
+        .lane-label { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #333; writing-mode: vertical-rl; transform: rotate(180deg); border-bottom: 2px solid #333; }
+        .lane-label:last-child { border-bottom: none; }
+        .lane-label.human { background: #FFF8E1; }
+        .lane-label.agent { background: #E3F2FD; }
+        .lanes-content { flex: 1; display: flex; flex-direction: column; }
+        .swim-lane { display: flex; min-height: 200px; border-bottom: 2px solid #333; position: relative; }
+        .swim-lane:last-child { border-bottom: none; }
+        .swim-lane.human-lane { background: #FFFEF5; }
+        .swim-lane.agent-lane { background: #F5FAFF; min-height: 220px; }
+        .phase-column { flex: 1; padding: 15px; border-right: 1px dashed #CCC; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; position: relative; }
+        .phase-column:last-child { border-right: none; }
+        .team-label { position: absolute; top: 5px; font-size: 9px; color: #666; font-weight: 500; background: #FFF; padding: 2px 6px; border-radius: 3px; border: 1px solid #DDD; }
+        .human-box { background: #FFF59D; border: 2px solid #FBC02D; border-radius: 6px; padding: 10px 12px; font-size: 10px; line-height: 1.4; min-width: 130px; max-width: 150px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 25px; }
+        .human-box .box-title { font-weight: 700; color: #333; margin-bottom: 5px; font-size: 10px; }
+        .human-box .box-desc { color: #555; font-size: 9px; }
+        .connector { position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .connector-line { width: 2px; height: 25px; border-left: 2px dashed #7C4DFF; }
+        .connector-dot { width: 10px; height: 10px; background: #7C4DFF; border-radius: 50%; }
+        .trigger-label { background: #7C4DFF; color: white; padding: 4px 12px; border-radius: 12px; font-size: 9px; font-weight: 600; white-space: nowrap; margin-top: 5px; }
+        .agent-box { background: #E8EAF6; border: 2px solid #5C6BC0; border-radius: 6px; padding: 12px; font-size: 10px; line-height: 1.5; min-width: 200px; max-width: 280px; margin-top: 50px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .agent-box .agent-name { font-weight: 700; color: #3949AB; margin-bottom: 8px; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+        .agent-box .agent-name::before { content: '🤖'; font-size: 12px; }
+        .agent-box .agent-action-title { font-weight: 600; color: #333; margin-top: 8px; margin-bottom: 4px; font-size: 9px; }
+        .agent-box .agent-actions { color: #444; font-size: 9px; }
+        .agent-box .agent-output { margin-top: 8px; padding-top: 8px; border-top: 1px solid #C5CAE9; }
+        .agent-box .output-label { font-weight: 600; color: #5C6BC0; font-size: 9px; }
+        .zoom-panel { position: fixed; bottom: 20px; right: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; overflow: hidden; }
+        .zoom-btn { background: white; border: none; padding: 10px 14px; cursor: pointer; font-size: 16px; border-right: 1px solid #eee; }
+        .zoom-btn:hover { background: #f5f5f5; }
+        .zoom-level { padding: 10px 14px; font-size: 13px; font-weight: 500; min-width: 50px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="mural-header">
+        <div class="mural-title">CHURN REDUCTION E2E FLOW</div>
+    </div>
+
+    <div class="canvas-container">
+        <div class="use-case-title">Use Case 5: Reduce Churn Risk (Target ~20% Reduction)</div>
+
+        <div class="workflow-wrapper" id="workflow">
+            <div class="phase-row">
+                <div class="phase-section">Risk Identification</div>
+                <div class="phase-section">Intervention Design</div>
+                <div class="phase-section">Save Campaign Execution</div>
+                <div class="phase-section">Outcome Measurement</div>
+            </div>
+
+            <div class="workflow-area">
+                <div class="lane-labels">
+                    <div class="lane-label human">Human</div>
+                    <div class="lane-label agent">Agent</div>
+                </div>
+
+                <div class="lanes-content">
+                    <!-- HUMAN LANE -->
+                    <div class="swim-lane human-lane">
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Retention Analytics</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Risk Dashboard</div>
+                                <div class="box-desc">Notices high-risk customer count exceeds monthly threshold</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 160px;">Customer Success</span>
+                            <div class="human-box">
+                                <div class="box-title">Validate Risk Scores</div>
+                                <div class="box-desc">Confirms At-Risk/Hibernating segments show declining engagement</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Retention Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Approve Save Playbook</div>
+                                <div class="box-desc">Approves high-value save offers, rejects blanket discounting</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 175px;">Service Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Plan Service Outreach</div>
+                                <div class="box-desc">Assigns proactive outreach calls for top-value at-risk users</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">CRM Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Monitor Save Campaigns</div>
+                                <div class="box-desc">Reviews win-back journey performance, approves offer escalation</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 180px;">Customer Success</span>
+                            <div class="human-box">
+                                <div class="box-title">Handle Non-Responders</div>
+                                <div class="box-desc">Reviews escalated non-responder list for personal outreach</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Leadership</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Churn Reduction</div>
+                                <div class="box-desc">Approves playbook standardization, requests ROI analysis</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 170px;">Retention Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Update Playbooks</div>
+                                <div class="box-desc">Documents winning save strategies for future use</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AGENT LANE -->
+                    <div class="swim-lane agent-lane">
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Churn Risk Scoring Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Scores churn risk using ML model across all customers<br>
+                                    • Sizes gap by segment and value tier (High/Med/Low)<br>
+                                    • Identifies drivers: declining engagement, longer recency, price sensitivity
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Risk-scored customer list with churn drivers and value tiers</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Intervention Design Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Recommends save-offers tiered by customer value<br>
+                                    • Designs win-back journey sequences<br>
+                                    • Proposes service outreach for highest-value at-risk
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Save playbook with offer tiers, journeys, and outreach list for approval</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Save Campaign Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Launches approved interventions via CRM platform<br>
+                                    • Tracks save rate and offer redemption in real-time<br>
+                                    • Escalates non-responders for human follow-up
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Daily save metrics, non-responder escalation list, optimization suggestions</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Churn Measurement Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Calculates churn reduction vs target (20%)<br>
+                                    • Measures ROI of save offers by tier<br>
+                                    • Identifies patterns in saved vs churned customers
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Churn reduction report, ROI analysis, playbook recommendations</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="zoom-panel">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+
+    <script>
+        let zoom = 1;
+        const workflow = document.getElementById('workflow');
+        function updateZoom() { workflow.style.transform = `scale(${zoom})`; workflow.style.transformOrigin = 'top left'; document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%'; }
+        function zoomIn() { if (zoom < 1.5) { zoom += 0.1; updateZoom(); } }
+        function zoomOut() { if (zoom > 0.3) { zoom -= 0.1; updateZoom(); } }
+    </script>
+</body>
+</html>

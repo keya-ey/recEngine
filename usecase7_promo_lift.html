@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case 7 - Promotion Incremental Lift</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f0f0; padding: 20px; }
+        .mural-header { background: #2D2D2D; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
+        .mural-title { font-size: 14px; font-weight: 500; }
+        .canvas-container { background: #FAFAFA; border: 1px solid #ddd; border-radius: 0 0 8px 8px; padding: 40px; overflow-x: auto; }
+        .use-case-title { font-size: 28px; font-weight: 600; color: #333; margin-bottom: 30px; }
+        .workflow-wrapper { min-width: 1400px; position: relative; }
+        .phase-row { display: flex; margin-left: 100px; }
+        .phase-section { flex: 1; text-align: center; padding: 12px 20px; background: #E8E8E8; border: 1px solid #CCC; font-size: 12px; font-weight: 600; color: #333; }
+        .phase-section:first-child { border-radius: 8px 0 0 0; }
+        .phase-section:last-child { border-radius: 0 8px 0 0; }
+        .workflow-area { display: flex; border: 2px solid #333; border-radius: 0 0 8px 8px; }
+        .lane-labels { width: 100px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 2px solid #333; }
+        .lane-label { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #333; writing-mode: vertical-rl; transform: rotate(180deg); border-bottom: 2px solid #333; }
+        .lane-label:last-child { border-bottom: none; }
+        .lane-label.human { background: #FFF8E1; }
+        .lane-label.agent { background: #E3F2FD; }
+        .lanes-content { flex: 1; display: flex; flex-direction: column; }
+        .swim-lane { display: flex; min-height: 200px; border-bottom: 2px solid #333; position: relative; }
+        .swim-lane:last-child { border-bottom: none; }
+        .swim-lane.human-lane { background: #FFFEF5; }
+        .swim-lane.agent-lane { background: #F5FAFF; min-height: 220px; }
+        .phase-column { flex: 1; padding: 15px; border-right: 1px dashed #CCC; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; position: relative; }
+        .phase-column:last-child { border-right: none; }
+        .team-label { position: absolute; top: 5px; font-size: 9px; color: #666; font-weight: 500; background: #FFF; padding: 2px 6px; border-radius: 3px; border: 1px solid #DDD; }
+        .human-box { background: #FFF59D; border: 2px solid #FBC02D; border-radius: 6px; padding: 10px 12px; font-size: 10px; line-height: 1.4; min-width: 130px; max-width: 150px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 25px; }
+        .human-box .box-title { font-weight: 700; color: #333; margin-bottom: 5px; font-size: 10px; }
+        .human-box .box-desc { color: #555; font-size: 9px; }
+        .connector { position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .connector-line { width: 2px; height: 25px; border-left: 2px dashed #7C4DFF; }
+        .connector-dot { width: 10px; height: 10px; background: #7C4DFF; border-radius: 50%; }
+        .trigger-label { background: #7C4DFF; color: white; padding: 4px 12px; border-radius: 12px; font-size: 9px; font-weight: 600; white-space: nowrap; margin-top: 5px; }
+        .agent-box { background: #E8EAF6; border: 2px solid #5C6BC0; border-radius: 6px; padding: 12px; font-size: 10px; line-height: 1.5; min-width: 200px; max-width: 280px; margin-top: 50px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .agent-box .agent-name { font-weight: 700; color: #3949AB; margin-bottom: 8px; font-size: 11px; display: flex; align-items: center; gap: 6px; }
+        .agent-box .agent-name::before { content: '🤖'; font-size: 12px; }
+        .agent-box .agent-action-title { font-weight: 600; color: #333; margin-top: 8px; margin-bottom: 4px; font-size: 9px; }
+        .agent-box .agent-actions { color: #444; font-size: 9px; }
+        .agent-box .agent-output { margin-top: 8px; padding-top: 8px; border-top: 1px solid #C5CAE9; }
+        .agent-box .output-label { font-weight: 600; color: #5C6BC0; font-size: 9px; }
+        .zoom-panel { position: fixed; bottom: 20px; right: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); display: flex; align-items: center; overflow: hidden; }
+        .zoom-btn { background: white; border: none; padding: 10px 14px; cursor: pointer; font-size: 16px; border-right: 1px solid #eee; }
+        .zoom-btn:hover { background: #f5f5f5; }
+        .zoom-level { padding: 10px 14px; font-size: 13px; font-weight: 500; min-width: 50px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="mural-header">
+        <div class="mural-title">PROMOTION INCREMENTAL LIFT E2E FLOW</div>
+    </div>
+
+    <div class="canvas-container">
+        <div class="use-case-title">Use Case 7: Improve Promotion Incremental Lift (Target ~15%)</div>
+
+        <div class="workflow-wrapper" id="workflow">
+            <div class="phase-row">
+                <div class="phase-section">Lift Analysis</div>
+                <div class="phase-section">Strategy Redesign</div>
+                <div class="phase-section">Execute Revised Promo</div>
+                <div class="phase-section">Measure & Iterate</div>
+            </div>
+
+            <div class="workflow-area">
+                <div class="lane-labels">
+                    <div class="lane-label human">Human</div>
+                    <div class="lane-label agent">Agent</div>
+                </div>
+
+                <div class="lanes-content">
+                    <!-- HUMAN LANE -->
+                    <div class="swim-lane human-lane">
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Promo Analytics</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Promo Results</div>
+                                <div class="box-desc">Notices 6% incremental lift vs 15% target despite high revenue</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 160px;">Finance</span>
+                            <div class="human-box">
+                                <div class="box-title">Assess Margin Impact</div>
+                                <div class="box-desc">Confirms margin erosion from broad discounting</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Promo Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Approve Targeting Rules</div>
+                                <div class="box-desc">Approves segmented offers, rejects broad sitewide discount</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 175px;">Finance</span>
+                            <div class="human-box">
+                                <div class="box-title">Set Margin Caps</div>
+                                <div class="box-desc">Sets margin-safe discount caps per segment</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Campaign Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Monitor Promo Performance</div>
+                                <div class="box-desc">Reviews incremental vs baseline sales daily, approves adjustments</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 185px;">Merchandising</span>
+                            <div class="human-box">
+                                <div class="box-title">Adjust Product Mix</div>
+                                <div class="box-desc">Updates promo product selection based on lift data</div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Leadership</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Lift + Margin</div>
+                                <div class="box-desc">Approves strategy for next cycle, requests playbook update</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 170px;">Promo Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Plan Next Promo Cycle</div>
+                                <div class="box-desc">Incorporates learnings into next promotion calendar</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AGENT LANE -->
+                    <div class="swim-lane agent-lane">
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Incremental Lift Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Separates baseline sales from true promo-driven sales<br>
+                                    • Identifies cannibalization: users who would have bought anyway<br>
+                                    • Breaks down lift by segment, channel, and product
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Incrementality report with cannibalization analysis</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Promo Strategy Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Recommends tighter audience targeting rules<br>
+                                    • Proposes tiered offer structure by customer value<br>
+                                    • Suggests optimal promo timing and duration
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Revised promo strategy with targeting rules and offer tiers for approval</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Promo Execution Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Runs revised promo strategy with approved targeting<br>
+                                    • Tracks incremental lift + margin impact in real-time<br>
+                                    • Dynamically adjusts offer exposure based on lift signals
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Daily lift vs baseline report, margin tracking, adjustment recommendations</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Promo Learning Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Calculates final incremental lift vs 15% target<br>
+                                    • Measures margin impact and ROI by segment<br>
+                                    • Auto-suggests next cycle changes based on learnings
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Post-promo analysis, ROI report, next cycle recommendations</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="zoom-panel">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+
+    <script>
+        let zoom = 1;
+        const workflow = document.getElementById('workflow');
+        function updateZoom() { workflow.style.transform = `scale(${zoom})`; workflow.style.transformOrigin = 'top left'; document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%'; }
+        function zoomIn() { if (zoom < 1.5) { zoom += 0.1; updateZoom(); } }
+        function zoomOut() { if (zoom > 0.3) { zoom -= 0.1; updateZoom(); } }
+    </script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Use Case 1 - Sales Conversion Optimization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .mural-header {
+            background: #2D2D2D;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .mural-title {
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mural-title select {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 14px;
+        }
+
+        .mural-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .mural-controls button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .canvas-container {
+            background: #FAFAFA;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            padding: 40px;
+            overflow-x: auto;
+        }
+
+        .use-case-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .workflow-wrapper {
+            min-width: 1400px;
+            position: relative;
+        }
+
+        /* Phase Headers */
+        .phase-row {
+            display: flex;
+            margin-left: 100px;
+            margin-bottom: 0;
+        }
+
+        .phase-section {
+            flex: 1;
+            text-align: center;
+            padding: 12px 20px;
+            background: #E8E8E8;
+            border: 1px solid #CCC;
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .phase-section:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .phase-section:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        /* Main Workflow Area */
+        .workflow-area {
+            display: flex;
+            border: 2px solid #333;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* Swim Lane Labels */
+        .lane-labels {
+            width: 100px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #333;
+        }
+
+        .lane-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #333;
+            background: #F5F5F5;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            border-bottom: 2px solid #333;
+        }
+
+        .lane-label:last-child {
+            border-bottom: none;
+        }
+
+        .lane-label.human {
+            background: #FFF8E1;
+        }
+
+        .lane-label.agent {
+            background: #E3F2FD;
+        }
+
+        /* Swim Lanes Content */
+        .lanes-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .swim-lane {
+            display: flex;
+            min-height: 200px;
+            border-bottom: 2px solid #333;
+            position: relative;
+        }
+
+        .swim-lane:last-child {
+            border-bottom: none;
+        }
+
+        .swim-lane.human-lane {
+            background: #FFFEF5;
+        }
+
+        .swim-lane.agent-lane {
+            background: #F5FAFF;
+            min-height: 220px;
+        }
+
+        /* Phase Columns */
+        .phase-column {
+            flex: 1;
+            padding: 15px;
+            border-right: 1px dashed #CCC;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 10px;
+            position: relative;
+        }
+
+        .phase-column:last-child {
+            border-right: none;
+        }
+
+        /* Team Labels */
+        .team-label {
+            position: absolute;
+            top: 5px;
+            font-size: 9px;
+            color: #666;
+            font-weight: 500;
+            background: #FFF;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #DDD;
+        }
+
+        /* Process Boxes - Human */
+        .human-box {
+            background: #FFF59D;
+            border: 2px solid #FBC02D;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 10px;
+            line-height: 1.4;
+            min-width: 130px;
+            max-width: 150px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 25px;
+        }
+
+        .human-box .box-title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 10px;
+        }
+
+        .human-box .box-desc {
+            color: #555;
+            font-size: 9px;
+        }
+
+        /* Connector Lines */
+        .connector {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .connector-line {
+            width: 2px;
+            height: 25px;
+            border-left: 2px dashed #7C4DFF;
+        }
+
+        .connector-dot {
+            width: 10px;
+            height: 10px;
+            background: #7C4DFF;
+            border-radius: 50%;
+        }
+
+        .trigger-label {
+            background: #7C4DFF;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-top: 5px;
+        }
+
+        /* Agent Boxes */
+        .agent-box {
+            background: #E8EAF6;
+            border: 2px solid #5C6BC0;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 10px;
+            line-height: 1.5;
+            min-width: 200px;
+            max-width: 280px;
+            margin-top: 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .agent-box .agent-name {
+            font-weight: 700;
+            color: #3949AB;
+            margin-bottom: 8px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .agent-box .agent-name::before {
+            content: '🤖';
+            font-size: 12px;
+        }
+
+        .agent-box .agent-action-title {
+            font-weight: 600;
+            color: #333;
+            margin-top: 8px;
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+
+        .agent-box .agent-actions {
+            color: #444;
+            font-size: 9px;
+        }
+
+        .agent-box .agent-output {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #C5CAE9;
+        }
+
+        .agent-box .output-label {
+            font-weight: 600;
+            color: #5C6BC0;
+            font-size: 9px;
+        }
+
+        /* Arrows */
+        .arrow-right {
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+            border-left: 12px solid #666;
+        }
+
+        /* Zoom Controls */
+        .zoom-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .zoom-btn {
+            background: white;
+            border: none;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 16px;
+            border-right: 1px solid #eee;
+        }
+
+        .zoom-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .zoom-level {
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* User Avatar */
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mural-header">
+        <div class="mural-title">
+            <span>SALES CONVERSION E2E FLOW</span>
+            <span style="opacity: 0.5">▼</span>
+        </div>
+        <div class="mural-controls">
+            <button>↩</button>
+            <button>↪</button>
+            <button>🔍</button>
+            <button>💬</button>
+            <button>👥</button>
+            <button>❓</button>
+            <div class="avatar">MS</div>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div class="use-case-title">Use Case 1: Increase Sales Conversion Rate (Target ~20%)</div>
+
+        <div class="workflow-wrapper" id="workflow">
+            <!-- Phase Headers -->
+            <div class="phase-row">
+                <div class="phase-section">Detect & Analyze (pre-action)</div>
+                <div class="phase-section">Strategize & Design (planning)</div>
+                <div class="phase-section">Execute & Monitor (in-flight)</div>
+                <div class="phase-section">Learn & Optimize (post-action)</div>
+            </div>
+
+            <!-- Workflow Area -->
+            <div class="workflow-area">
+                <!-- Lane Labels -->
+                <div class="lane-labels">
+                    <div class="lane-label human">Human</div>
+                    <div class="lane-label agent">Agent</div>
+                </div>
+
+                <!-- Lanes Content -->
+                <div class="lanes-content">
+                    <!-- HUMAN LANE -->
+                    <div class="swim-lane human-lane">
+                        <!-- Phase 1: Detect -->
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Marketing Analytics</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Conversion Dashboard</div>
+                                <div class="box-desc">Reviews weekly KPIs, notices 15% vs 20% target gap</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 160px;">Growth Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Prioritize Investigation</div>
+                                <div class="box-desc">Selects mobile + paid social as focus areas</div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 2: Strategize -->
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Marketing Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Experiment Plan</div>
+                                <div class="box-desc">Approves A/B test variants, modifies test duration from 7 to 14 days</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 180px;">Finance</span>
+                            <div class="human-box">
+                                <div class="box-title">Approve Budget Split</div>
+                                <div class="box-desc">Approves $50K test budget, rejects high-risk checkout removal</div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 3: Execute -->
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Growth Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Monitor Daily Alerts</div>
+                                <div class="box-desc">Reviews agent alerts, approves traffic reallocation to winning variant</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 180px;">Product Team</span>
+                            <div class="human-box">
+                                <div class="box-title">Validate UX Changes</div>
+                                <div class="box-desc">Reviews checkout simplification, flags accessibility concerns</div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 4: Learn -->
+                        <div class="phase-column">
+                            <span class="team-label" style="left: 10px;">Leadership</span>
+                            <div class="human-box">
+                                <div class="box-title">Review Results & Scale</div>
+                                <div class="box-desc">Approves 100% rollout of winning variant, requests desktop follow-up</div>
+                                <div class="connector">
+                                    <div class="connector-dot"></div>
+                                    <div class="connector-line"></div>
+                                    <div class="trigger-label">Agent triggered</div>
+                                </div>
+                            </div>
+                            <span class="team-label" style="left: 170px;">Marketing Manager</span>
+                            <div class="human-box">
+                                <div class="box-title">Document Learnings</div>
+                                <div class="box-desc">Adds context and caveats to agent-generated insights</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AGENT LANE -->
+                    <div class="swim-lane agent-lane">
+                        <!-- Phase 1: Detect -->
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Gap Analysis Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Breaks down conversion gap by channel, segment, device, landing page, and campaign<br>
+                                    • Runs causal inference to identify true drivers vs correlations<br>
+                                    • Flags mobile paid-social first-time users as biggest drop point
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Root cause report with statistical confidence scores and recommended investigation areas</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 2: Strategize -->
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Strategy Recommendation Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Generates 3-5 experiment hypotheses with expected lift ranges<br>
+                                    • Proposes: simplified checkout, express pay, guest checkout variants<br>
+                                    • Simulates ROI scenarios and flags risks per variant
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">A/B test plan with traffic splits, success metrics, and risk assessment for human approval</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 3: Execute -->
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Campaign Execution Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Launches approved experiments via platform APIs<br>
+                                    • Monitors conversion lift hourly using Bayesian analysis<br>
+                                    • Auto-adjusts traffic to winning variants (with human approval)<br>
+                                    • Alerts if lift < threshold or negative side effects detected
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Daily performance summary, statistical significance updates, recommended actions</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phase 4: Learn -->
+                        <div class="phase-column">
+                            <div class="agent-box">
+                                <div class="agent-name">Learning & Insights Agent</div>
+                                <div class="agent-action-title">Agent Actions:</div>
+                                <div class="agent-actions">
+                                    • Synthesizes experiment results into actionable insights<br>
+                                    • Updates company knowledge base with winning patterns<br>
+                                    • Proactively identifies next optimization opportunity (desktop users)
+                                </div>
+                                <div class="agent-output">
+                                    <div class="output-label">Output:</div>
+                                    <div class="agent-actions">Executive summary, knowledge base update, next opportunity brief for human review</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="zoom-panel">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="zoom-level" id="zoomLevel">49%</div>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+
+    <script>
+        let zoom = 1;
+        const workflow = document.getElementById('workflow');
+
+        function updateZoom() {
+            workflow.style.transform = `scale(${zoom})`;
+            workflow.style.transformOrigin = 'top left';
+            document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+        }
+
+        function zoomIn() {
+            if (zoom < 1.5) {
+                zoom += 0.1;
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (zoom > 0.3) {
+                zoom -= 0.1;
+                updateZoom();
+            }
+        }
+    </script>
+</body>
+</html>

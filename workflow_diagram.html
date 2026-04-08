@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Workflow - Use Case Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .header {
+            background: #4169E1;
+            color: white;
+            padding: 12px 24px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .controls button {
+            background: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .workflow-container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            overflow-x: auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .workflow-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .workflow-canvas {
+            position: relative;
+            min-width: 1600px;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+        }
+
+        .phase-header {
+            display: flex;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .phase {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            border-right: 1px dashed #ccc;
+        }
+
+        .phase:last-child {
+            border-right: none;
+        }
+
+        .swim-lanes {
+            position: relative;
+        }
+
+        .swim-lane {
+            display: flex;
+            min-height: 120px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+        }
+
+        .lane-label {
+            position: absolute;
+            left: -160px;
+            width: 140px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: #666;
+            text-align: right;
+            padding-right: 10px;
+        }
+
+        .lane-content {
+            flex: 1;
+            display: flex;
+            padding: 15px 10px;
+            gap: 15px;
+        }
+
+        .process-box {
+            background: #FFF59D;
+            border: 2px solid #F9A825;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 11px;
+            line-height: 1.4;
+            min-width: 140px;
+            max-width: 180px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .process-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .process-box.blue {
+            background: #BBDEFB;
+            border-color: #1976D2;
+        }
+
+        .process-box.green {
+            background: #C8E6C9;
+            border-color: #388E3C;
+        }
+
+        .process-box.purple {
+            background: #E1BEE7;
+            border-color: #7B1FA2;
+        }
+
+        .process-box.orange {
+            background: #FFE0B2;
+            border-color: #F57C00;
+        }
+
+        .process-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        .process-desc {
+            color: #555;
+            font-size: 10px;
+        }
+
+        .agent-trigger {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4169E1;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            box-shadow: 0 2px 6px rgba(65,105,225,0.3);
+            z-index: 10;
+        }
+
+        .agent-trigger::before {
+            content: '';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 20px;
+            background: #4169E1;
+            border-left: 2px dotted #4169E1;
+        }
+
+        .agent-section {
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 3px dashed #333;
+        }
+
+        .agent-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #4169E1;
+        }
+
+        .agent-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: white;
+            border: 2px solid #4169E1;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .agent-card-header {
+            font-weight: 600;
+            color: #4169E1;
+            margin-bottom: 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-icon {
+            width: 24px;
+            height: 24px;
+            background: #4169E1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+
+        .agent-actions {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .agent-actions li {
+            font-size: 11px;
+            color: #555;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .agent-actions li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #4169E1;
+            font-weight: bold;
+        }
+
+        .connector-arrow {
+            position: absolute;
+            width: 30px;
+            height: 2px;
+            background: #666;
+            top: 50%;
+            right: -32px;
+            transform: translateY(-50%);
+        }
+
+        .connector-arrow::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid #666;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        .human-loop-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #FF6B6B;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .zoom-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 1px;
+            overflow: hidden;
+        }
+
+        .zoom-btn {
+            background: white;
+            border: none;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: background 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .zoom-level {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            min-width: 60px;
+            justify-content: center;
+        }
+
+        @media print {
+            .controls, .zoom-controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>AGENTIC E2E WORKFLOW - SALES CONVERSION OPTIMIZATION</h1>
+        <div class="controls">
+            <button onclick="window.print()">Export</button>
+            <button onclick="resetView()">Reset View</button>
+        </div>
+    </div>
+
+    <div class="workflow-container">
+        <h2 class="workflow-title">Use Case 1: Increase Sales Conversion Rate (Target ~20%)</h2>
+        
+        <div class="workflow-canvas" id="canvas">
+            <!-- Phase Headers -->
+            <div class="phase-header">
+                <div class="phase">Detect & Diagnose<br><small>(intelligence)</small></div>
+                <div class="phase">Hypothesize & Design<br><small>(strategy)</small></div>
+                <div class="phase">Execute & Monitor<br><small>(activation)</small></div>
+                <div class="phase">Learn & Scale<br><small>(optimization)</small></div>
+            </div>
+
+            <!-- Swim Lanes -->
+            <div class="swim-lanes" style="margin-left: 160px;">
+                <!-- Lane 1: Data Intelligence -->
+                <div class="swim-lane">
+                    <div class="lane-label">Data Intelligence<br>Layer</div>
+                    <div class="lane-content">
+                        <div class="process-box blue">
+                            <div class="process-title">Anomaly Detection</div>
+                            <div class="process-desc">Real-time monitoring flags conversion gap: 15% actual vs 20% target</div>
+                            <div class="agent-trigger">Agent Triggered</div>
+                        </div>
+                        <div class="process-box blue">
+                            <div class="process-title">Multi-Dimensional Analysis</div>
+                            <div class="process-desc">Breaks down by channel, device, segment, time-of-day, page load speed</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="process-box blue">
+                            <div class="process-title">Causal Inference</div>
+                            <div class="process-desc">Identifies mobile checkout friction as primary driver (not just correlation)</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="process-box blue">
+                            <div class="process-title">Predictive Impact Model</div>
+                            <div class="process-desc">Simulates expected lift from each intervention scenario</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lane 2: Strategy & Planning -->
+                <div class="swim-lane">
+                    <div class="lane-label">Strategy &<br>Planning Layer</div>
+                    <div class="lane-content">
+                        <div class="process-box green">
+                            <div class="process-title">Competitive Intelligence Scan</div>
+                            <div class="process-desc">Scrapes competitor checkout flows, benchmarks against industry best practices</div>
+                            <div class="agent-trigger">Agent Suggested</div>
+                        </div>
+                        <div class="process-box green">
+                            <div class="process-title">Experiment Design Generator</div>
+                            <div class="process-desc">Auto-generates A/B test plan: simplified checkout vs express pay vs guest checkout</div>
+                            <div class="human-loop-badge">👤</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="process-box green">
+                            <div class="process-title">Resource Allocation Optimizer</div>
+                            <div class="process-desc">Proposes budget split across tests with expected ROI and risk scores</div>
+                            <div class="human-loop-badge">👤</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lane 3: Execution -->
+                <div class="swim-lane">
+                    <div class="lane-label">Execution &<br>Activation Layer</div>
+                    <div class="lane-content">
+                        <div class="process-box orange">
+                            <div class="process-title">Campaign Orchestration</div>
+                            <div class="process-desc">Launches approved experiments via API integrations to web platform</div>
+                            <div class="agent-trigger">Agent Triggered</div>
+                        </div>
+                        <div class="process-box orange">
+                            <div class="process-title">Real-Time Performance Monitor</div>
+                            <div class="process-desc">Tracks conversion lift hourly, auto-adjusts traffic allocation to winning variants</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="process-box orange">
+                            <div class="process-title">Anomaly Alert System</div>
+                            <div class="process-desc">Flags if lift < threshold or detects negative side effects (cart abandonment spike)</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lane 4: Learning & Optimization -->
+                <div class="swim-lane">
+                    <div class="lane-label">Learning &<br>Optimization Layer</div>
+                    <div class="lane-content">
+                        <div class="process-box purple">
+                            <div class="process-title">Automated Insight Generation</div>
+                            <div class="process-desc">Synthesizes learnings: express checkout won with +18% lift on mobile</div>
+                            <div class="agent-trigger">Agent Triggered</div>
+                        </div>
+                        <div class="process-box purple">
+                            <div class="process-title">Knowledge Base Update</div>
+                            <div class="process-desc">Documents winning patterns to company knowledge graph for future use</div>
+                            <div class="connector-arrow"></div>
+                        </div>
+                        <div class="process-box purple">
+                            <div class="process-title">Next Opportunity Scout</div>
+                            <div class="process-desc">Proactively identifies next conversion lever: desktop optimization opportunity</div>
+                            <div class="human-loop-badge">👤</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agent Details Section -->
+            <div class="agent-section">
+                <div class="agent-section-title">🤖 Agent Capabilities & Actions</div>
+                
+                <div class="agent-cards">
+                    <div class="agent-card">
+                        <div class="agent-card-header">
+                            <div class="agent-icon">🔍</div>
+                            Conversion Intelligence Agent
+                        </div>
+                        <ul class="agent-actions">
+                            <li>Monitors 50+ KPIs across conversion funnel in real-time with ML-based anomaly detection</li>
+                            <li>Performs causal inference using Bayesian networks to identify true drivers (not just correlations)</li>
+                            <li>Segments users into micro-cohorts based on behavior patterns and friction points</li>
+                            <li>Generates natural language insights explaining "why" conversion dropped with statistical confidence</li>
+                        </ul>
+                    </div>
+
+                    <div class="agent-card">
+                        <div class="agent-card-header">
+                            <div class="agent-icon">💡</div>
+                            Strategy Recommendation Agent
+                        </div>
+                        <ul class="agent-actions">
+                            <li>Scrapes competitor sites and industry benchmarks for checkout flow best practices</li>
+                            <li>Generates 3-5 experiment hypotheses with expected lift ranges and implementation complexity</li>
+                            <li>Simulates counterfactual scenarios: "What if we had simplified checkout 3 months ago?"</li>
+                            <li>Proposes resource allocation with Pareto-optimal budget splits across tests</li>
+                        </ul>
+                    </div>
+
+                    <div class="agent-card">
+                        <div class="agent-card-header">
+                            <div class="agent-icon">⚡</div>
+                            Campaign Execution Agent
+                        </div>
+                        <ul class="agent-actions">
+                            <li>Orchestrates experiment launch via APIs to web platform, analytics, and CDP</li>
+                            <li>Implements Bayesian multi-armed bandit for dynamic traffic allocation to winners</li>
+                            <li>Monitors statistical significance continuously and auto-pauses losing variants</li>
+                            <li>Sends daily executive summaries with conversational insights via Slack/email</li>
+                        </ul>
+                    </div>
+
+                    <div class="agent-card">
+                        <div class="agent-card-header">
+                            <div class="agent-icon">🎓</div>
+                            Learning & Memory Agent
+                        </div>
+                        <ul class="agent-actions">
+                            <li>Builds company knowledge graph of "what works" across different contexts</li>
+                            <li>Performs meta-analysis across all past experiments to find universal principles</li>
+                            <li>Proactively scouts for next optimization opportunities using pattern matching</li>
+                            <li>Suggests strategic pivots when detecting market shifts or diminishing returns</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agent-card" style="background: #FFF3E0; border-color: #FF6B6B; margin-top: 20px;">
+                    <div class="agent-card-header" style="color: #FF6B6B;">
+                        <div class="agent-icon" style="background: #FF6B6B;">👤</div>
+                        Human-in-the-Loop Checkpoints
+                    </div>
+                    <ul class="agent-actions">
+                        <li><strong>Approval Gate 1:</strong> Marketing manager reviews experiment design, adjusts test duration, and approves/rejects risky changes (e.g., removing security badges)</li>
+                        <li><strong>Approval Gate 2:</strong> Budget approval for traffic allocation - manager can override agent's recommendation based on quarterly priorities</li>
+                        <li><strong>Review Gate 3:</strong> Exec review of strategic insights before scaling to 100% traffic - ensures brand alignment and margin protection</li>
+                        <li><strong>Escalation Protocol:</strong> Agent auto-escalates if lift is negative after 48hrs or if unexpected customer complaints emerge</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="zoom-level" id="zoomLevel">100%</div>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+
+        function zoomIn() {
+            if (currentZoom < 1.5) {
+                currentZoom += 0.1;
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.1;
+                applyZoom();
+            }
+        }
+
+        function applyZoom() {
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${currentZoom})`;
+            canvas.style.transformOrigin = 'top left';
+            document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+        }
+
+        function resetView() {
+            currentZoom = 1;
+            applyZoom();
+        }
+
+        // Add hover effects
+        document.querySelectorAll('.process-box').forEach(box => {
+            box.addEventListener('click', function() {
+                alert('Process: ' + this.querySelector('.process-title').textContent + '\n\n' + 
+                      this.querySelector('.process-desc').textContent);
+            });
+        });
+    </script>
+</body>
+</html>

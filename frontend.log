@@ -1,0 +1,20 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.173.245.13:3000
+
+✓ Starting...
+✓ Ready in 2.4s
+ GET / 200 in 1451ms (compile: 881ms, render: 570ms)
+ HEAD / 200 in 112ms (compile: 22ms, render: 91ms)
+ GET / 200 in 87ms (compile: 13ms, render: 73ms)
+ GET / 200 in 99ms (compile: 12ms, render: 87ms)
+ GET /arpu-recovery 200 in 157ms (compile: 108ms, render: 49ms)
+ GET /api/analytics?type=arpu-workflow 200 in 260ms (compile: 128ms, render: 132ms)
+ GET /api/analytics?type=arpu-workflow 200 in 51ms (compile: 10ms, render: 41ms)
+ GET /save-the-customer 200 in 158ms (compile: 117ms, render: 41ms)
+ GET /api/analytics?type=save-customer-workflow 200 in 63ms (compile: 15ms, render: 48ms)
+ GET /api/analytics?type=save-customer-workflow 200 in 48ms (compile: 15ms, render: 34ms)
